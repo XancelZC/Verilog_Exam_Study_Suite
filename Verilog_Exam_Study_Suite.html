@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verilog HDL 期中复习交互系统</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Chosen Palette: Logic Blue (Slate & Indigo) - Minimalistic, academic, and calm. -->
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Fira+Code:wght@400;600&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc; /* Slate 50 */
+            color: #1e293b; /* Slate 800 */
+        }
+
+        .code-font {
+            font-family: 'Fira Code', monospace;
+        }
+
+        /* Chart Container Styling - Mandatory Requirements */
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 400px;
+        }
+
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 350px;
+            }
+        }
+
+        /* Interactive Switch Toggle Styling */
+        .toggle-checkbox:checked {
+            right: 0;
+            border-color: #4f46e5;
+        }
+        .toggle-checkbox:checked + .toggle-label {
+            background-color: #4f46e5;
+        }
+        
+        .led-indicator {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background-color: #cbd5e1;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+        .led-indicator.on {
+            background-color: #ef4444; /* Red for high */
+            box-shadow: 0 0 10px #ef4444, inset 0 2px 4px rgba(255,255,255,0.3);
+        }
+        .led-indicator.green {
+            background-color: #cbd5e1;
+        }
+        .led-indicator.green.on {
+            background-color: #22c55e; /* Green for high */
+            box-shadow: 0 0 10px #22c55e, inset 0 2px 4px rgba(255,255,255,0.3);
+        }
+
+        /* Smooth reveal animation */
+        .reveal-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.5s ease-out, opacity 0.5s ease-out;
+            opacity: 0;
+        }
+        .reveal-content.active {
+            max-height: 1000px;
+            opacity: 1;
+        }
+    </style>
+    <!-- Application Structure Plan:
+         1. Header: Title and context.
+         2. Dashboard: Overview of the exam structure (Chart.js).
+         3. Concept Deck: Interactive flashcards for the 6 basic questions.
+         4. Analysis Lab: Interactive simulations for the Voter and Decoder Error questions.
+         5. Design Studio: Coding templates and logic simulators for Full Adder and 3-8 Decoder.
+         This structure transforms static Q&A into an active learning process (Predict -> Reveal -> Simulate).
+    -->
+</head>
+<body class="bg-slate-50 min-h-screen flex flex-col">
+
+    <!-- Navigation / Header -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16 items-center">
+                <div class="flex items-center">
+                    <span class="text-2xl mr-2">⚡</span>
+                    <h1 class="text-xl font-bold text-slate-900 tracking-tight">Verilog HDL 期中复习交互系统</h1>
+                </div>
+                <nav class="hidden md:flex space-x-8">
+                    <a href="#dashboard" class="text-slate-500 hover:text-indigo-600 px-3 py-2 text-sm font-medium transition-colors">总览</a>
+                    <a href="#concepts" class="text-slate-500 hover:text-indigo-600 px-3 py-2 text-sm font-medium transition-colors">基础概念</a>
+                    <a href="#analysis" class="text-slate-500 hover:text-indigo-600 px-3 py-2 text-sm font-medium transition-colors">代码分析</a>
+                    <a href="#design" class="text-slate-500 hover:text-indigo-600 px-3 py-2 text-sm font-medium transition-colors">综合设计</a>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-grow">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-12">
+
+            <!-- Section 1: Dashboard -->
+            <!-- Visualization & Content Choices: 
+                 Goal: Inform user about exam weight.
+                 Method: Doughnut Chart (Chart.js).
+                 Interaction: Hover for details.
+                 Justification: Quick visual breakdown of focus areas.
+            -->
+            <section id="dashboard" class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 md:p-8">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+                    <div>
+                        <h2 class="text-2xl font-bold text-slate-900 mb-4">试卷结构总览</h2>
+                        <p class="text-slate-600 mb-6">
+                            本次期中模拟试卷（主观题版）共 100 分。本系统将静态试题转化为交互式实验，帮助你通过“预测-验证”的方式深度掌握知识点。
+                        </p>
+                        <div class="space-y-4">
+                            <div class="flex items-center p-3 bg-indigo-50 rounded-lg border border-indigo-100">
+                                <div class="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-bold mr-4">1</div>
+                                <div>
+                                    <h3 class="font-semibold text-indigo-900">基础概念 (60%)</h3>
+                                    <p class="text-xs text-indigo-700">语法、数据类型、建模方式</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center p-3 bg-emerald-50 rounded-lg border border-emerald-100">
+                                <div class="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 font-bold mr-4">2</div>
+                                <div>
+                                    <h3 class="font-semibold text-emerald-900">程序分析 (20%)</h3>
+                                    <p class="text-xs text-emerald-700">逻辑推导、错误排查</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center p-3 bg-amber-50 rounded-lg border border-amber-100">
+                                <div class="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center text-amber-600 font-bold mr-4">3</div>
+                                <div>
+                                    <h3 class="font-semibold text-amber-900">综合设计 (20%)</h3>
+                                    <p class="text-xs text-amber-700">手写完整模块代码</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="chart-container">
+                            <canvas id="examChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Section 2: Concepts Flashcards -->
+            <section id="concepts">
+                <div class="mb-6 border-l-4 border-indigo-500 pl-4">
+                    <h2 class="text-2xl font-bold text-slate-900">第一部分：基础概念强化</h2>
+                    <p class="text-slate-500 mt-1">点击卡片查看答案，自我检测对 Verilog 核心语法的掌握程度。</p>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="flashcards-container">
+                    <!-- Cards injected via JS -->
+                </div>
+            </section>
+
+            <!-- Section 3: Analysis Lab -->
+            <section id="analysis">
+                <div class="mb-6 border-l-4 border-emerald-500 pl-4">
+                    <h2 class="text-2xl font-bold text-slate-900">第二部分：逻辑分析实验室</h2>
+                    <p class="text-slate-500 mt-1">不仅是阅读代码，还要运行它。通过交互式仿真验证逻辑。</p>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    
+                    <!-- Voter Circuit Analysis -->
+                    <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                        <div class="bg-emerald-50 px-6 py-4 border-b border-emerald-100">
+                            <h3 class="font-bold text-emerald-900">题目 1: 逻辑功能分析</h3>
+                        </div>
+                        <div class="p-6">
+                            <div class="bg-slate-900 rounded-lg p-4 mb-4 overflow-x-auto">
+<pre class="code-font text-sm text-slate-300">
+module decision(
+    input a, b, c,
+    output y
+);
+    <span class="text-yellow-400">assign y = (a & b) | (b & c) | (a & c);</span>
+endmodule
+</pre>
+                            </div>
+                            <p class="text-sm text-slate-600 mb-4">通过改变下方开关状态，观察输出 Y 的变化，推导电路功能。</p>
+                            
+                            <!-- Interactive Simulator -->
+                            <div class="bg-slate-100 rounded-lg p-6 flex flex-col items-center justify-center space-y-6">
+                                <div class="flex space-x-8">
+                                    <div class="flex flex-col items-center">
+                                        <label class="mb-2 font-bold text-slate-700">A</label>
+                                        <input type="checkbox" id="voter-a" class="w-6 h-6 accent-emerald-600 cursor-pointer" onchange="updateVoter()">
+                                    </div>
+                                    <div class="flex flex-col items-center">
+                                        <label class="mb-2 font-bold text-slate-700">B</label>
+                                        <input type="checkbox" id="voter-b" class="w-6 h-6 accent-emerald-600 cursor-pointer" onchange="updateVoter()">
+                                    </div>
+                                    <div class="flex flex-col items-center">
+                                        <label class="mb-2 font-bold text-slate-700">C</label>
+                                        <input type="checkbox" id="voter-c" class="w-6 h-6 accent-emerald-600 cursor-pointer" onchange="updateVoter()">
+                                    </div>
+                                </div>
+                                
+                                <div class="flex items-center space-x-4">
+                                    <span class="text-slate-500 text-sm">Logic: Count(1s) ≥ 2 ?</span>
+                                    <div class="flex items-center bg-white px-4 py-2 rounded shadow-sm border border-slate-200">
+                                        <span class="font-bold text-slate-700 mr-2">Output Y:</span>
+                                        <div id="voter-led" class="led-indicator"></div>
+                                        <span id="voter-val" class="ml-2 font-mono font-bold">0</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mt-4 p-4 bg-yellow-50 rounded border border-yellow-100 text-sm text-yellow-800">
+                                <strong>结论：</strong> 这是一个<span class="font-bold">三人表决器</span>。当任意两个或三个输入为 1 时，输出为 1。
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Debugging Lab -->
+                    <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                        <div class="bg-red-50 px-6 py-4 border-b border-red-100">
+                            <h3 class="font-bold text-red-900">题目 2: 错误排查 (3-8 译码器)</h3>
+                        </div>
+                        <div class="p-6">
+                            <p class="text-sm text-slate-600 mb-2">以下代码存在设计缺陷。点击“运行综合检查”查看问题。</p>
+                             <div class="relative bg-slate-900 rounded-lg p-4 mb-4 overflow-x-auto group">
+<pre class="code-font text-sm text-slate-300">
+always @(*) begin
+    case (a)
+        3'd0: y[0] = 1;
+        <span class="text-slate-500">// ... 省略 ...</span>
+        3'd7: y[7] = 1;
+        <span id="missing-code" class="text-red-400 hidden border border-red-500 px-1 rounded bg-red-900/30">&lt;-- 缺少 default 或初始化!</span>
+    endcase
+end
+</pre>
+                            </div>
+                            
+                            <button onclick="revealError()" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded transition-colors flex items-center justify-center">
+                                <span class="mr-2">🔍</span> 运行综合检查
+                            </button>
+
+                            <div id="error-explanation" class="hidden mt-4 space-y-3">
+                                <div class="p-3 bg-red-100 text-red-800 rounded text-sm font-semibold border border-red-200 flex items-center">
+                                    <span class="text-xl mr-2">⚠️</span> 警告：推断出锁存器 (Latch Inferred)
+                                </div>
+                                <p class="text-sm text-slate-600">
+                                    <strong>原因：</strong> 组合逻辑的 <code>case</code> 语句没有覆盖所有情况（虽 3bit 是 0-7，但仿真可能含 x/z，且综合器要求完备性），且没有默认赋值。
+                                </p>
+                                <p class="text-sm text-slate-600">
+                                    <strong>修正：</strong> 在 <code>case</code> 前添加 <code>y = 8'b0;</code> 或添加 <code>default: y = 8'b0;</code>。
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Section 3: Design Studio -->
+            <section id="design">
+                <div class="mb-6 border-l-4 border-amber-500 pl-4">
+                    <h2 class="text-2xl font-bold text-slate-900">第三部分：综合设计工作台</h2>
+                    <p class="text-slate-500 mt-1">必考核心代码模板。结合实时波形仿真，掌握数据流与行为级建模。</p>
+                </div>
+
+                <div class="space-y-8">
+                    
+                    <!-- Full Adder Design -->
+                    <div class="bg-white rounded-xl shadow-sm border border-slate-200">
+                        <div class="grid grid-cols-1 lg:grid-cols-2">
+                            <div class="p-6 md:p-8 border-b lg:border-b-0 lg:border-r border-slate-100">
+                                <div class="flex justify-between items-center mb-4">
+                                    <h3 class="text-lg font-bold text-slate-800">任务 1: 1位全加器 (Dataflow)</h3>
+                                    <span class="px-2 py-1 bg-amber-100 text-amber-800 text-xs font-bold rounded">Assign 建模</span>
+                                </div>
+                                <p class="text-slate-600 text-sm mb-6">要求使用 <code>assign</code> 语句实现 Sum 和 Cout。</p>
+                                
+                                <div class="bg-slate-50 p-4 rounded-lg border border-slate-200 mb-6">
+                                    <h4 class="font-bold text-slate-700 text-xs uppercase mb-3">交互式真值表仿真</h4>
+                                    <div class="grid grid-cols-5 gap-2 text-center text-sm font-mono mb-2 text-slate-500">
+                                        <div>A</div>
+                                        <div>B</div>
+                                        <div>Cin</div>
+                                        <div>Sum</div>
+                                        <div>Cout</div>
+                                    </div>
+                                    <div class="grid grid-cols-5 gap-2 items-center justify-items-center mb-2">
+                                        <input type="checkbox" id="fa-a" class="w-5 h-5 accent-amber-600" onchange="updateFullAdder()">
+                                        <input type="checkbox" id="fa-b" class="w-5 h-5 accent-amber-600" onchange="updateFullAdder()">
+                                        <input type="checkbox" id="fa-cin" class="w-5 h-5 accent-amber-600" onchange="updateFullAdder()">
+                                        <div id="fa-sum" class="led-indicator green"></div>
+                                        <div id="fa-cout" class="led-indicator green"></div>
+                                    </div>
+                                    <div class="text-center mt-2 text-xs text-slate-400">点击复选框模拟输入 (High/Low)</div>
+                                </div>
+                            </div>
+
+                            <div class="p-6 md:p-8 bg-slate-50">
+                                <div class="flex justify-between items-center mb-2">
+                                    <h4 class="font-bold text-slate-700 text-sm">参考代码实现</h4>
+                                </div>
+                                <div class="bg-slate-900 rounded-lg p-4 overflow-x-auto shadow-inner">
+<pre class="code-font text-sm text-slate-300">
+module FullAdder(
+    input A, B, Cin,
+    output Sum, Cout
+);
+    <span class="text-slate-500">// 必背公式</span>
+    <span class="text-amber-400">assign Sum = A ^ B ^ Cin;</span>
+    <span class="text-amber-400">assign Cout = (A & B) | (A & Cin) | (B & Cin);</span>
+endmodule
+</pre>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 3-8 Decoder Design -->
+                    <div class="bg-white rounded-xl shadow-sm border border-slate-200">
+                        <div class="grid grid-cols-1 lg:grid-cols-2">
+                            <div class="p-6 md:p-8 border-b lg:border-b-0 lg:border-r border-slate-100">
+                                <div class="flex justify-between items-center mb-4">
+                                    <h3 class="text-lg font-bold text-slate-800">任务 2: 3-8 译码器 (Behavioral)</h3>
+                                    <span class="px-2 py-1 bg-indigo-100 text-indigo-800 text-xs font-bold rounded">Always 建模</span>
+                                </div>
+                                <p class="text-slate-600 text-sm mb-6">要求使用 <code>always</code> 和 <code>case</code> 语句实现。</p>
+
+                                <div class="bg-slate-50 p-4 rounded-lg border border-slate-200">
+                                    <h4 class="font-bold text-slate-700 text-xs uppercase mb-3">输入选择仿真</h4>
+                                    <div class="flex items-center justify-between mb-4">
+                                        <label class="text-sm font-medium text-slate-700">Input A [2:0]:</label>
+                                        <select id="decoder-input" class="bg-white border border-slate-300 text-slate-900 text-sm rounded focus:ring-indigo-500 focus:border-indigo-500 block w-24 p-2" onchange="updateDecoder()">
+                                            <option value="0">3'd0</option>
+                                            <option value="1">3'd1</option>
+                                            <option value="2">3'd2</option>
+                                            <option value="3">3'd3</option>
+                                            <option value="4">3'd4</option>
+                                            <option value="5">3'd5</option>
+                                            <option value="6">3'd6</option>
+                                            <option value="7">3'd7</option>
+                                        </select>
+                                    </div>
+                                    <div class="space-y-2">
+                                        <div class="flex justify-between text-xs font-mono text-slate-500">
+                                            <span>y[7]</span><span>y[6]</span><span>y[5]</span><span>y[4]</span>
+                                            <span>y[3]</span><span>y[2]</span><span>y[1]</span><span>y[0]</span>
+                                        </div>
+                                        <div class="flex justify-between" id="decoder-leds">
+                                            <!-- LEDs generated by JS -->
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="p-6 md:p-8 bg-slate-50">
+                                <div class="flex justify-between items-center mb-2">
+                                    <h4 class="font-bold text-slate-700 text-sm">参考代码实现</h4>
+                                </div>
+                                <div class="bg-slate-900 rounded-lg p-4 overflow-x-auto shadow-inner">
+<pre class="code-font text-sm text-slate-300">
+module decode38(
+    input [2:0] a,
+    output <span class="text-indigo-400 font-bold">reg</span> [7:0] y <span class="text-slate-500">// 必须是 reg</span>
+);
+    always @(*) begin
+        <span class="text-indigo-400">y = 8'b0;</span> <span class="text-slate-500">// 初始化防止锁存器</span>
+        case (a)
+            3'd0: y[0] = 1;
+            3'd1: y[1] = 1;
+            <span class="text-slate-500">// ...</span>
+            3'd7: y[7] = 1;
+        endcase
+    end
+endmodule
+</pre>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </section>
+
+        </div>
+    </main>
+
+    <footer class="bg-white border-t border-slate-200 mt-12 py-8">
+        <div class="max-w-7xl mx-auto px-4 text-center text-slate-500 text-sm">
+            <p>Verilog HDL 期中复习辅助系统 | 基于安徽工程大学复习资料生成</p>
+        </div>
+    </footer>
+
+    <!-- JavaScript Logic -->
+    <script>
+        // Data Storage: Basic Concepts Q&A
+        const flashcardsData = [
+            {
+                q: "Verilog HDL 的三种主要建模方式是什么？",
+                a: "1. 行为级建模 (Behavioral)<br>2. 数据流建模 (Dataflow)<br>3. 结构化/门级建模 (Structural)"
+            },
+            {
+                q: "wire 类型与 reg 类型的主要区别？",
+                a: "<strong>Wire:</strong> 物理连线，不能存值，只能在 assign 中赋值。<br><strong>Reg:</strong> 数据存储元件，保持状态，只能在 always/initial 中赋值。"
+            },
+            {
+                q: "initial 与 always 的执行机制区别？",
+                a: "<strong>Initial:</strong> 0时刻开始，只执行一次（用于仿真初始化）。<br><strong>Always:</strong> 0时刻开始，满足敏感列表条件则循环执行（用于硬件逻辑）。"
+            },
+            {
+                q: "四值逻辑系统 (0, 1, x, z) 分别代表什么？",
+                a: "0: 低电平<br>1: 高电平<br>x: 未知/不定态<br>z: 高阻态"
+            },
+            {
+                q: "always @(*) 中的 * 代表什么？",
+                a: "通配符，代表模块中所有输入信号。常用于组合逻辑建模，防止敏感列表遗漏。"
+            },
+            {
+                q: "2选1数据选择器的核心 assign 语句？",
+                a: "<code class='bg-slate-100 p-1 rounded'>assign y = sel ? d1 : d0;</code><br>或者<br><code class='bg-slate-100 p-1 rounded'>assign y = (~sel & d0) | (sel & d1);</code>"
+            }
+        ];
+
+        // Initialization
+        document.addEventListener('DOMContentLoaded', () => {
+            initChart();
+            renderFlashcards();
+            initDecoderLeds();
+            updateVoter();
+            updateFullAdder();
+            updateDecoder();
+        });
+
+        // 1. Chart.js Implementation
+        function initChart() {
+            const ctx = document.getElementById('examChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['基础概念 (简答)', '程序分析 (阅读)', '综合设计 (编程)'],
+                    datasets: [{
+                        data: [60, 20, 20],
+                        backgroundColor: [
+                            '#4f46e5', // Indigo 600
+                            '#10b981', // Emerald 500
+                            '#f59e0b'  // Amber 500
+                        ],
+                        borderWidth: 0,
+                        hoverOffset: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                font: { family: "'Inter', sans-serif" },
+                                padding: 20
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // 2. Flashcards Rendering
+        function renderFlashcards() {
+            const container = document.getElementById('flashcards-container');
+            flashcardsData.forEach((card, index) => {
+                const cardEl = document.createElement('div');
+                cardEl.className = 'bg-white p-6 rounded-xl shadow-sm border border-slate-200 hover:shadow-md transition-shadow cursor-pointer group';
+                cardEl.onclick = () => toggleCard(index);
+                cardEl.innerHTML = `
+                    <div class="flex items-start justify-between mb-4">
+                        <span class="text-xs font-bold text-indigo-500 uppercase tracking-wider">Q${index + 1}</span>
+                        <span class="text-slate-400 group-hover:text-indigo-500 transition-colors">⚡ 点击查看</span>
+                    </div>
+                    <h3 class="font-semibold text-slate-800 text-lg mb-4">${card.q}</h3>
+                    <div id="answer-${index}" class="reveal-content bg-slate-50 p-4 rounded-lg border border-slate-100 text-sm text-slate-600">
+                        ${card.a}
+                    </div>
+                `;
+                container.appendChild(cardEl);
+            });
+        }
+
+        function toggleCard(index) {
+            const answer = document.getElementById(`answer-${index}`);
+            answer.classList.toggle('active');
+        }
+
+        // 3. Analysis Lab Logic
+        // Voter Simulator
+        function updateVoter() {
+            const a = document.getElementById('voter-a').checked ? 1 : 0;
+            const b = document.getElementById('voter-b').checked ? 1 : 0;
+            const c = document.getElementById('voter-c').checked ? 1 : 0;
+            
+            // Logic: (a & b) | (b & c) | (a & c)
+            const y = (a & b) | (b & c) | (a & c);
+            
+            const led = document.getElementById('voter-led');
+            const val = document.getElementById('voter-val');
+            
+            if (y) {
+                led.classList.add('on');
+                val.innerText = '1';
+                val.classList.add('text-red-600');
+            } else {
+                led.classList.remove('on');
+                val.innerText = '0';
+                val.classList.remove('text-red-600');
+            }
+        }
+
+        // Error Reveal
+        function revealError() {
+            document.getElementById('missing-code').classList.remove('hidden');
+            document.getElementById('error-explanation').classList.remove('hidden');
+        }
+
+        // 4. Design Studio Simulators
+        // Full Adder Simulator
+        function updateFullAdder() {
+            const a = document.getElementById('fa-a').checked ? 1 : 0;
+            const b = document.getElementById('fa-b').checked ? 1 : 0;
+            const cin = document.getElementById('fa-cin').checked ? 1 : 0;
+
+            // Logic
+            const sum = a ^ b ^ cin;
+            const cout = (a & b) | (a & cin) | (b & cin);
+
+            const sumLed = document.getElementById('fa-sum');
+            const coutLed = document.getElementById('fa-cout');
+
+            if (sum) sumLed.classList.add('on'); else sumLed.classList.remove('on');
+            if (cout) coutLed.classList.add('on'); else coutLed.classList.remove('on');
+        }
+
+        // Decoder Simulator
+        function initDecoderLeds() {
+            const container = document.getElementById('decoder-leds');
+            for(let i=7; i>=0; i--) {
+                const led = document.createElement('div');
+                led.id = `dec-led-${i}`;
+                led.className = 'led-indicator green w-6 h-6';
+                container.appendChild(led);
+            }
+        }
+
+        function updateDecoder() {
+            const val = parseInt(document.getElementById('decoder-input').value);
+            
+            // Logic: Decoder sets y[val] to 1, others 0
+            for(let i=0; i<8; i++) {
+                const led = document.getElementById(`dec-led-${i}`);
+                if (i === val) {
+                    led.classList.add('on');
+                } else {
+                    led.classList.remove('on');
+                }
+            }
+        }
+    </script>
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. Visuals are CSS/HTML based. -->
+</body>
+</html>
